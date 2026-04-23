@@ -1,7 +1,7 @@
 // src/api.ts
 import axios from "axios";
 
-const BASE_URL = "http://localhost:8000";
+const BASE_URL = "https://tradex-alpha-backend.onrender.com";
 
 export type RiskProfile = "low" | "medium" | "high";
 
