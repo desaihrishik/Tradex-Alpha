@@ -1,4 +1,4 @@
-# ![Tradex Alpha Logo](frontend/src/assets/tradex-alpha-logo.svg) Tradex Alpha
+# <img src="frontend/src/assets/tradex-alpha-logo.svg" alt="Tradex Alpha Logo" height="32" /> Tradex Alpha
 
 AI-powered swing trading dashboard for **NVDA** with technical signals, sentiment, probabilistic forecasting, quant risk metrics, and an LLM copilot (**Alpha**).
 
