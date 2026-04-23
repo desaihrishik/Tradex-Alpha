@@ -1,0 +1,20 @@
+<svg width="96" height="96" viewBox="0 0 96 96" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="alphaBg" x1="14" y1="10" x2="82" y2="88" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#312E81"/>
+      <stop offset="0.55" stop-color="#3730A3"/>
+      <stop offset="1" stop-color="#1E3A8A"/>
+    </linearGradient>
+    <linearGradient id="alphaStroke" x1="30" y1="74" x2="66" y2="26" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#93C5FD"/>
+      <stop offset="0.5" stop-color="#A5B4FC"/>
+      <stop offset="1" stop-color="#F8FAFC"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="8" y="8" width="80" height="80" rx="24" fill="url(#alphaBg)"/>
+  <rect x="8.5" y="8.5" width="79" height="79" rx="23.5" stroke="#A5B4FC" stroke-opacity="0.35"/>
+
+  <path d="M48 24L67 72H58.5L54.2 60.6H41.8L37.5 72H29L48 24Z" fill="url(#alphaStroke)"/>
+  <path d="M44.7 53.1H51.3L48 43.9L44.7 53.1Z" fill="#4F46E5"/>
+</svg>

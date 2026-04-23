@@ -44,21 +44,28 @@ def rsi(series: pd.Series, period: int = 14) -> pd.Series:
     return rsi_val
 
 
-def build_dataset():
-    if not RAW_CSV.exists():
-        raise FileNotFoundError(f"Raw data not found at {RAW_CSV}. Run download_data.py first.")
+def build_feature_frame(raw_df: pd.DataFrame) -> pd.DataFrame:
+    df = raw_df.copy()
 
-    df = pd.read_csv(RAW_CSV)
+    # Runtime market history may include source/provider metadata.
+    # Keep the training frame numeric so sklearn never sees provider strings.
+    for optional_col in ("Source", "source"):
+        if optional_col in df.columns:
+            df = df.drop(columns=[optional_col])
 
     required_cols = {"Date", "Open", "High", "Low", "Close", "Volume"}
     missing = required_cols - set(df.columns)
     if missing:
-        raise ValueError(f"Missing columns in raw CSV: {missing}")
+        raise ValueError(f"Missing columns in raw data: {missing}")
+
+    if "Dividends" not in df.columns:
+        df["Dividends"] = 0.0
+    if "Stock Splits" not in df.columns:
+        df["Stock Splits"] = 0.0
 
     df["Date"] = pd.to_datetime(df["Date"])
     df = df.sort_values("Date").reset_index(drop=True)
 
-    # ==== Trend & returns ====
     df["return_1d"] = df["Close"].pct_change()
     df["return_3d"] = df["Close"].pct_change(3)
     df["return_5d"] = df["Close"].pct_change(5)
@@ -72,19 +79,24 @@ def build_dataset():
     df["ema_12_dist"] = (df["Close"] - df["ema_12"]) / df["ema_12"]
     df["ema_26_dist"] = (df["Close"] - df["ema_26"]) / df["ema_26"]
 
-    # ==== Volume features ====
     df["vol_change_1d"] = df["Volume"].pct_change()
     df["vol_ma_5"] = df["Volume"].rolling(5).mean()
     df["vol_vs_ma5"] = np.where(df["vol_ma_5"] > 0, df["Volume"] / df["vol_ma_5"], 1.0)
 
-    # ==== RSI ====
     df["rsi_14"] = rsi(df["Close"], period=14)
-
-    # ==== Candlestick patterns (detailed) ====
     df = add_candlestick_patterns(df)
-
-    # ==== Structural swing patterns ====
     df = add_structural_patterns(df, lookback=60)
+
+    df = df.dropna().reset_index(drop=True)
+    return df
+
+
+def build_dataset():
+    if not RAW_CSV.exists():
+        raise FileNotFoundError(f"Raw data not found at {RAW_CSV}. Run download_data.py first.")
+
+    raw_df = pd.read_csv(RAW_CSV)
+    df = build_feature_frame(raw_df)
 
     # ==== Target: BUY / HOLD / SELL based on next-day return ====
     future_return = df["Close"].shift(-1) / df["Close"] - 1.0

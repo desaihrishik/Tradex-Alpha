@@ -1,0 +1,27 @@
+<svg width="96" height="96" viewBox="0 0 96 96" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="12" y1="10" x2="84" y2="86" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#1E293B"/>
+      <stop offset="1" stop-color="#0F172A"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="22" y1="66" x2="74" y2="30" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#6366F1"/>
+      <stop offset="0.55" stop-color="#3B82F6"/>
+      <stop offset="1" stop-color="#FACC15"/>
+    </linearGradient>
+    <linearGradient id="bar" x1="18" y1="68" x2="54" y2="30" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#94BD52"/>
+      <stop offset="1" stop-color="#C8E08C"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="7" y="7" width="82" height="82" rx="20" fill="url(#bg)"/>
+  <rect x="7.5" y="7.5" width="81" height="81" rx="19.5" stroke="#334155"/>
+
+  <path d="M24 64L38 50L48 56L67 34" stroke="url(#accent)" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M63 34H73V44" stroke="url(#accent)" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <rect x="21" y="54" width="6" height="14" rx="3" fill="url(#bar)"/>
+  <rect x="31" y="47" width="6" height="21" rx="3" fill="url(#bar)"/>
+  <rect x="41" y="58" width="6" height="10" rx="3" fill="url(#bar)"/>
+</svg>

@@ -1,0 +1,132 @@
+{
+  "feature_cols": [
+    "Open",
+    "High",
+    "Low",
+    "Close",
+    "Volume",
+    "Dividends",
+    "Stock Splits",
+    "return_1d",
+    "return_3d",
+    "return_5d",
+    "return_10d",
+    "ema_5",
+    "ema_12",
+    "ema_26",
+    "ema_5_dist",
+    "ema_12_dist",
+    "ema_26_dist",
+    "vol_change_1d",
+    "vol_ma_5",
+    "vol_vs_ma5",
+    "rsi_14",
+    "c_body",
+    "c_range",
+    "c_upper_wick",
+    "c_lower_wick",
+    "c_body_to_range",
+    "c_direction",
+    "pattern_doji",
+    "pattern_spinning_top",
+    "pattern_hammer",
+    "pattern_hanging_man",
+    "pattern_inverted_hammer",
+    "pattern_shooting_star",
+    "pattern_bullish_marubozu",
+    "pattern_bearish_marubozu",
+    "pattern_bullish_engulfing",
+    "pattern_bearish_engulfing",
+    "pattern_piercing",
+    "pattern_dark_cloud_cover",
+    "pattern_bullish_harami",
+    "pattern_bearish_harami",
+    "pattern_morning_star",
+    "pattern_evening_star",
+    "pattern_three_white_soldiers",
+    "pattern_three_black_crows",
+    "pattern_inside_bar",
+    "pattern_outside_bar",
+    "pattern_struct_double_top",
+    "pattern_struct_double_bottom",
+    "pattern_struct_head_shoulders",
+    "pattern_struct_inverse_head_shoulders",
+    "pattern_struct_ascending_triangle",
+    "pattern_struct_descending_triangle",
+    "pattern_struct_sym_triangle",
+    "pattern_struct_rising_wedge",
+    "pattern_struct_falling_wedge",
+    "pattern_struct_bull_flag",
+    "pattern_struct_bear_flag"
+  ],
+  "label_mapping": {
+    "-1": "SELL",
+    "0": "HOLD",
+    "1": "BUY"
+  },
+  "class_order": [
+    -1,
+    0,
+    1
+  ],
+  "model_path": "nvda_rf_signal.pkl",
+  "split_idx": 360,
+  "metrics": {
+    "classification_report": {
+      "-1": {
+        "precision": 0.33636363636363636,
+        "recall": 0.8705882352941177,
+        "f1-score": 0.4852459016393443,
+        "support": 85.0
+      },
+      "0": {
+        "precision": 0.42857142857142855,
+        "recall": 0.11538461538461539,
+        "f1-score": 0.18181818181818182,
+        "support": 52.0
+      },
+      "1": {
+        "precision": 0.5,
+        "recall": 0.0782608695652174,
+        "f1-score": 0.13533834586466165,
+        "support": 115.0
+      },
+      "accuracy": 0.3531746031746032,
+      "macro avg": {
+        "precision": 0.4216450216450216,
+        "recall": 0.35474457341465016,
+        "f1-score": 0.26746747644072927,
+        "support": 252.0
+      },
+      "weighted avg": {
+        "precision": 0.43006596578025147,
+        "recall": 0.3531746031746032,
+        "f1-score": 0.262953797096531,
+        "support": 252.0
+      }
+    },
+    "confusion_matrix": [
+      [
+        74,
+        5,
+        6
+      ],
+      [
+        43,
+        6,
+        3
+      ],
+      [
+        103,
+        3,
+        9
+      ]
+    ],
+    "dataset_rows": 612,
+    "train_rows": 360,
+    "test_rows": 252
+  },
+  "trained_at": "2026-04-20T15:55:52.860232+00:00",
+  "version": "20260420T155552Z",
+  "symbol": "NVDA"
+}

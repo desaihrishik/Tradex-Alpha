@@ -32,13 +32,21 @@ import numpy as np
 import pandas as pd
 from pathlib import Path
 from typing import Dict, Any, List, Optional, Literal
-
-from joblib import load
 from datetime import datetime, timedelta
 
+from joblib import load
+from sklearn.linear_model import LogisticRegression
+from sklearn.linear_model import LinearRegression
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
+
 # Existing project imports
-from src.signal_engine import load_model_and_data, compute_position_size
-from src.sentiment_engine import get_nvda_sentiment
+from src.signal_engine import (
+    apply_risk_decision_policy,
+    compute_position_size,
+    load_model_and_data,
+)
+from src.data.repositories.sentiment_repository import SentimentSnapshotRepository
 
 
 # -------------------------------------------------------------------
@@ -243,6 +251,117 @@ def monte_carlo_forecast(
         "p90": p90,
     }
 
+
+def _next_trading_dates(last_date: str, days: int) -> list[str]:
+    current = pd.to_datetime(last_date).to_pydatetime()
+    current = current.replace(hour=0, minute=0, second=0, microsecond=0)
+    dates: list[str] = []
+    while len(dates) < days:
+        current += timedelta(days=1)
+        if current.weekday() >= 5:
+            continue
+        dates.append(current.strftime("%Y-%m-%d"))
+    return dates
+
+
+def logistic_trend_forecast(
+    prices: np.ndarray,
+    *,
+    last_date: str,
+    horizon_days: int,
+    lags: int = 5,
+) -> Dict[str, Any]:
+    """
+    Fit a lightweight logistic regression on recent return momentum and
+    roll the predicted direction forward into a single expected trend line.
+    """
+    if len(prices) < lags + 8:
+        return {
+            "dates": _next_trading_dates(last_date, horizon_days),
+            "values": [],
+            "direction_probability": 0.5,
+            "direction": "sideways",
+        }
+
+    log_returns = np.diff(np.log(prices))
+    if len(log_returns) <= lags + 1:
+        return {
+            "dates": _next_trading_dates(last_date, horizon_days),
+            "values": [],
+            "direction_probability": 0.5,
+            "direction": "sideways",
+        }
+
+    X: list[list[float]] = []
+    y: list[int] = []
+    y_reg: list[float] = []
+    for idx in range(lags, len(log_returns)):
+        X.append(log_returns[idx - lags:idx].tolist())
+        y.append(1 if log_returns[idx] > 0 else 0)
+        y_reg.append(float(log_returns[idx]))
+
+    if len(set(y)) < 2:
+        return {
+            "dates": _next_trading_dates(last_date, horizon_days),
+            "values": [],
+            "direction_probability": 0.5,
+            "direction": "sideways",
+        }
+
+    model = Pipeline(
+        steps=[
+            ("scaler", StandardScaler()),
+            ("logreg", LogisticRegression(max_iter=1000, random_state=42)),
+        ]
+    )
+    model.fit(np.asarray(X), np.asarray(y))
+    reg_model = LinearRegression().fit(np.asarray(X), np.asarray(y_reg))
+
+    recent_window = log_returns[-lags:].tolist()
+    prob_up = float(model.predict_proba([recent_window])[0][1])
+    recent_sigma = float(np.std(log_returns[-min(len(log_returns), 30):]))
+    recent_sigma = max(recent_sigma, 0.0025)
+
+    trend_window = min(len(prices), 20)
+    x_fit = np.arange(trend_window).reshape(-1, 1)
+    y_fit = prices[-trend_window:]
+    trend_model = LinearRegression().fit(x_fit, y_fit)
+    trend_slope_pct = float(trend_model.coef_[0] / max(float(y_fit[-1]), 1e-6))
+    recent_return_5 = float(np.mean(log_returns[-min(len(log_returns), 5):]))
+    recent_return_10 = float(np.mean(log_returns[-min(len(log_returns), 10):]))
+    blended_drift = (recent_return_5 * 0.6) + (recent_return_10 * 0.4)
+    base_drift = (trend_slope_pct * 0.9) + (blended_drift * 0.1)
+
+    current_price = float(prices[-1])
+    values = [round(current_price, 2)]
+    working_window = recent_window.copy()
+    for step in range(1, horizon_days + 1):
+        step_prob = float(model.predict_proba([working_window])[0][1])
+        direction_bias = (step_prob - 0.5) * 2.0
+        logistic_return = float(reg_model.predict([working_window])[0])
+        momentum_bias = base_drift * 0.9
+        volatility_bias = recent_sigma * direction_bias * 0.75
+        decay = max(0.60, 1.0 - (step - 1) * 0.08)
+        expected_return = (
+            (logistic_return * 0.45)
+            + (momentum_bias * 0.40)
+            + (volatility_bias * 0.15)
+        ) * decay
+        expected_return = float(np.clip(expected_return, -0.018, 0.018))
+        current_price = max(0.01, current_price * float(np.exp(expected_return)))
+        current_price = round(current_price, 2)
+        values.append(current_price)
+        working_window = (working_window[1:] + [expected_return]) if len(working_window) >= lags else working_window + [expected_return]
+
+    direction = "bullish" if prob_up >= 0.55 else "bearish" if prob_up <= 0.45 else "sideways"
+    future_dates = _next_trading_dates(last_date, horizon_days)
+    return {
+        "dates": future_dates,
+        "values": values[1:],
+        "direction_probability": prob_up,
+        "direction": direction,
+    }
+
 # ===================================================================
 # PnL & CAPITAL ANALYSIS
 # ===================================================================
@@ -301,6 +420,11 @@ def explain_buy(
         f"The model is detecting a BUY opportunity driven by improving trend structure "
         f"and a confidence level of {pct(confidence)}. "
     )
+
+    if confidence < 0.40:
+        explanation += (
+            "This is a low-conviction signal, so upside expectations should be treated cautiously. "
+        )
 
     # Patterns
     if pat_strength > 0.25:
@@ -377,6 +501,8 @@ def explain_sell(
     entry_price: Optional[float],
     current_price: float,
     horizon: int,
+    confidence: float,
+    pat_strength: float,
     sentiment_label: str,
     forecast: Dict[str, float],
     sell_analysis: Optional[Dict[str, Any]],
@@ -389,16 +515,33 @@ def explain_sell(
     p50 = forecast["p50"]
     p90 = forecast["p90"]
 
-    explanation = (
-        "The model recommends SELL based on weakening trend conditions, pattern pressure, "
-        "and reduced upside probability. "
-    )
+    if confidence < 0.40:
+        explanation = (
+            "The model currently leans SELL, but the edge is weak and should be treated as a cautious de-risking signal. "
+        )
+    else:
+        explanation = (
+            "The model recommends SELL based on weakening trend conditions and reduced upside probability. "
+        )
+
+    if pat_strength > 0.10:
+        explanation += (
+            "Some bullish pattern support is still present, so the technical picture is mixed rather than strongly bearish. "
+        )
+    elif pat_strength < -0.10:
+        explanation += (
+            "Bearish pattern pressure is also present, which supports the defensive stance. "
+        )
+    else:
+        explanation += (
+            "Pattern structure is mixed, so the sell case is not being driven by a single dominant bearish formation. "
+        )
 
     # Sentiment
     if sentiment_label == "bearish":
         explanation += "Market sentiment is also bearish, increasing downside risk. "
     else:
-        explanation += "Sentiment is not strong enough to counter the technical weakness. "
+        explanation += "Sentiment does not strongly confirm the sell case. "
 
     # If user gave entry price — compute actual saved profits or risks
     if entry_price is not None and sell_analysis is not None:
@@ -472,6 +615,10 @@ def get_agentic_recommendation(
     best_class = int(classes[best_idx])   # -1, 0, 1
     best_label = label_map.get((best_class), str(best_class))
     best_conf = float(probas[best_idx])
+    probas_by_label = {
+        label_map.get(int(c), str(int(c))): float(p)
+        for c, p in zip(classes, probas)
+    }
 
     # -------------------------------------------------------
     # PATTERNS
@@ -487,13 +634,25 @@ def get_agentic_recommendation(
     # -------------------------------------------------------
     # SENTIMENT
     # -------------------------------------------------------
-    sentiment = get_nvda_sentiment()
-    sent_str = sentiment_strength(sentiment.label, sentiment.score)
+    sentiment_snapshot = SentimentSnapshotRepository().get_latest_snapshot("NVDA")
+    sent_str = sentiment_strength(sentiment_snapshot.label, sentiment_snapshot.score)
 
     # -------------------------------------------------------
     # TREND
     # -------------------------------------------------------
     trend_str = compute_trend_strength(latest)
+
+    adjusted_label, policy_note = apply_risk_decision_policy(
+        probas_by_label=probas_by_label,
+        risk_profile=risk_profile,
+        pattern_bias="bullish" if pat_strength > 0.1 else "bearish" if pat_strength < -0.1 else "mixed" if abs(pat_strength) > 0 else "neutral",
+        trend_strength=trend_str,
+        sentiment_strength=sent_str,
+    )
+    reverse_label_map = {label: value for value, label in label_map.items()}
+    best_label = adjusted_label
+    best_class = reverse_label_map.get(best_label, 0)
+    best_conf = float(probas_by_label.get(best_label, 0.0))
 
     # -------------------------------------------------------
     # DYNAMIC HORIZON
@@ -517,6 +676,11 @@ def get_agentic_recommendation(
         last_price=price,
         log_returns=returns,
         days=horizon,
+    )
+    trend_forecast = logistic_trend_forecast(
+        df["Close"].tail(252).values,
+        last_date=pd.to_datetime(date).strftime("%Y-%m-%d"),
+        horizon_days=min(horizon, 5),
     )
 
     # -------------------------------------------------------
@@ -552,8 +716,8 @@ def get_agentic_recommendation(
             horizon=horizon,
             confidence=best_conf,
             pat_strength=pat_strength,
-            sent_label=sentiment.label,
-            sent_score=sentiment.score,
+            sent_label=sentiment_snapshot.label,
+            sent_score=sentiment_snapshot.score,
             forecast=forecast,
         )
     elif best_class == 0:
@@ -561,8 +725,8 @@ def get_agentic_recommendation(
             horizon=horizon,
             confidence=best_conf,
             pat_strength=pat_strength,
-            sent_label=sentiment.label,
-            sent_score=sentiment.score,
+            sent_label=sentiment_snapshot.label,
+            sent_score=sentiment_snapshot.score,
             forecast=forecast,
         )
     else:
@@ -570,35 +734,39 @@ def get_agentic_recommendation(
             entry_price=entry_price,
             current_price=price,
             horizon=horizon,
-            sentiment_label=sentiment.label,
+            confidence=best_conf,
+            pat_strength=pat_strength,
+            sentiment_label=sentiment_snapshot.label,
             forecast=forecast,
             sell_analysis=sell_info,
         )
+    if policy_note:
+        explanation = f"{policy_note} {explanation}"
 
     # -------------------------------------------------------
     # FINAL OUTPUT
     # -------------------------------------------------------
+    formatted_date = pd.to_datetime(date).strftime("%Y-%m-%d")
+
     out = {
-        "date": date.strftime("%Y-%m-%d"),
+        "date": formatted_date,
         "latest_close": price,
         "action": best_label,
         "signal_value": best_class,
         "confidence": best_conf,
-       "probas": {
-    label_map.get(int(c), str(int(c))): float(p)
-    for c, p in zip(classes, probas)
-},
+       "probas": probas_by_label,
         "patterns": active_patterns,
         "pattern_strength": pat_strength,
 
         "trend_strength": trend_str,
 
-        "sentiment_label": sentiment.label,
-        "sentiment_score": sentiment.score,
+        "sentiment_label": sentiment_snapshot.label,
+        "sentiment_score": sentiment_snapshot.score,
         "sentiment_strength": sent_str,
 
         "horizon_days": horizon,
         "forecast": forecast,
+        "trend_forecast": trend_forecast,
 
         "suggested_shares": shares,
         "capital_used": capital_used,
