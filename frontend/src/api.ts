@@ -205,6 +205,7 @@ export interface AnalyzeResponse {
 export interface CurrentTrendResponse {
   symbol: string;
   as_of: string;
+  market_refresh_at?: string;
   latest_close: number;
   previous_close: number;
   change: number;

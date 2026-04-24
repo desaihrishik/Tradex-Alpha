@@ -863,7 +863,9 @@ function App() {
                   <div>
                     <div className="signal-label">Trend</div>
                     <div className={`signal-action trend-${currentTrend.trend_label}`}>{currentTrend.trend_label}</div>
-                    <div className="muted-small">As of: {formatDateTimeWithZone(currentTrend.as_of)}</div>
+                    <div className="muted-small">
+                      As of: {formatDateTimeWithZone(currentTrend.market_refresh_at ?? currentTrend.as_of)}
+                    </div>
                   </div>
                   <div>
                     <div className="signal-label">Last Close</div>
@@ -1360,12 +1362,9 @@ function App() {
                           </span>
                         </div>
                         <div className="pattern-tags">
-                          {c.patterns.slice(0, 1).map((p) => (
+                          {c.patterns.map((p) => (
                             <span key={p} className="pattern-tag">{p}</span>
                           ))}
-                          {c.patterns.length > 1 && (
-                            <span className="pattern-tag pattern-tag-muted">+{c.patterns.length - 1}</span>
-                          )}
                           {c.patterns.length === 0 && (
                             <span className="pattern-tag pattern-tag-muted">no_pattern</span>
                           )}

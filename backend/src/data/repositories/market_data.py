@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime, timezone
 import time
 from zoneinfo import ZoneInfo
 
@@ -569,6 +570,7 @@ class LocalMarketDataRepository:
                             return {
                                 "symbol": ticker,
                                 "as_of": self._as_market_close_iso(latest["ts"]),
+                                "market_refresh_at": datetime.now(timezone.utc).isoformat(),
                                 "latest_close": latest_close,
                                 "previous_close": previous_close,
                                 "change": change,
@@ -602,6 +604,7 @@ class LocalMarketDataRepository:
             return {
                 "symbol": ticker,
                 "as_of": self._as_market_close_iso(latest["Date"]),
+                "market_refresh_at": datetime.now(timezone.utc).isoformat(),
                 "latest_close": latest_close,
                 "previous_close": previous_close,
                 "change": change,
