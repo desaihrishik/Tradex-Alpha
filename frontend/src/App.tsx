@@ -675,7 +675,7 @@ function App() {
     setLlmQuestion(prompt);
   };
 
-  const showMarketLoader = loading || (refreshing && signal !== null);
+  const showMarketLoader = loading;
   useEffect(() => {
     if (!showMarketLoader) {
       setShowSlowLoaderHint(false);
@@ -683,7 +683,7 @@ function App() {
     }
     const timer = window.setTimeout(() => {
       setShowSlowLoaderHint(true);
-    }, 10_000);
+    }, 15_000);
     return () => window.clearTimeout(timer);
   }, [showMarketLoader]);
 
@@ -979,7 +979,7 @@ function App() {
             <div className="card-subsection combined-reco-panel">
               <div className="signal-label">Current NVDA Recommendation</div>
               {loading && !signal && <p className="muted">Loading signal...</p>}
-              {refreshing && signal && <p className="muted">Refreshing...</p>}
+              {refreshing && signal && <p className="muted">Analysing the market...</p>}
               {error && !loading && !isConnecting && <p className="error">{error}</p>}
 
               {signal && !error && (
