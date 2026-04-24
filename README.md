@@ -65,6 +65,7 @@ Open:
 - Backend: `http://localhost:8000/api/ping`
 
 Note: create `backend/.env` before production-like runs (see Environment Variables section below).
+Demo admin access: use password `test-admin` to open Admin & System Status and inspect scheduler health, refresh timestamps, model version, and recent events.
 
 Current symbol support is NVDA-focused in API routes and UI.
 
@@ -219,6 +220,7 @@ Set required env vars in provider dashboard.
 
 ## Troubleshooting
 - **"Failed to load data from backend"**: ensure backend is running on port 8000.
+- **Data appears stale or panels fail intermittently**: open the Admin & System Status panel (password `test-admin` in demo setup) and verify scheduler status, market/sentiment refresh timestamps, and recent admin events.
 - **Admin status timezone confusion**: timestamps are stored in UTC; UI formats to local timezone.
 - **Git push auth issues**: use GitHub PAT or authenticated GitHub CLI.
 - **Model warnings (sklearn version mismatch)**: retrain/export model using the current sklearn runtime.
