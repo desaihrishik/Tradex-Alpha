@@ -38,6 +38,8 @@ Alpha is the built-in conversational trading copilot designed to explain the pla
   - **Explain in detail** follow-up for deeper reasoning on the same question
 - Reuses the same user query when **Explain in detail** is clicked, and runs a richer deep-analysis response
 
+![Alpha AI Copilot](docs/images/alpha-copilot.png)
+
 ## Tech Stack
 ### Frontend
 - React 19 + TypeScript
