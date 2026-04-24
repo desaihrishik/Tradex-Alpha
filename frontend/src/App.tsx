@@ -201,6 +201,7 @@ function App() {
   const [error, setError] = useState<string | null>(null);
   const [agenticError, setAgenticError] = useState<string | null>(null);
   const [isConnecting, setIsConnecting] = useState(true);
+  const [showSlowLoaderHint, setShowSlowLoaderHint] = useState(false);
 
   const [budget, setBudget] = useState(1000);
   const [budgetInput, setBudgetInput] = useState("1000");
@@ -675,6 +676,17 @@ function App() {
   };
 
   const showMarketLoader = loading || (refreshing && signal !== null);
+  useEffect(() => {
+    if (!showMarketLoader) {
+      setShowSlowLoaderHint(false);
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      setShowSlowLoaderHint(true);
+    }, 10_000);
+    return () => window.clearTimeout(timer);
+  }, [showMarketLoader]);
+
   const loaderSubtitle = loading
     ? "Booting models, pricing feed, and sentiment intelligence."
     : "Pulling latest candles, recommendation engine output, and quant factors.";
@@ -718,6 +730,11 @@ function App() {
               <span className="market-loader-loading-bar" aria-hidden="true" />
             </div>
             <p className="market-loader-subtitle">{loaderSubtitle}</p>
+            {showSlowLoaderHint && (
+              <p className="market-loader-subtitle market-loader-subtitle-warning">
+                This might take a while..
+              </p>
+            )}
           </div>
 
           <div className="market-loader-chart" aria-hidden="true">

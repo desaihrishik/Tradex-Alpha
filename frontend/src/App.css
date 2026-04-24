@@ -74,6 +74,12 @@ body {
   font-size: 0.77rem;
 }
 
+.market-loader-subtitle-warning {
+  margin-top: 4px;
+  color: #d7e6cd;
+  opacity: 0.9;
+}
+
 .market-loader-chart {
   position: absolute;
   inset: 0;
