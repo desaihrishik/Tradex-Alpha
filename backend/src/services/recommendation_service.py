@@ -20,11 +20,12 @@ class RecommendationService:
         self.market_data.sync_recent_market_data(ticker=symbol)
         self.sentiment_repo.sync_sentiment_snapshot(symbol=symbol)
 
-    def get_candles(self, limit: int = 120) -> dict[str, list[dict[str, object]]]:
-        try:
-            self._refresh_live_inputs("NVDA")
-        except Exception:
-            pass
+    def get_candles(self, limit: int = 120, *, refresh: bool = True) -> dict[str, list[dict[str, object]]]:
+        if refresh:
+            try:
+                self._refresh_live_inputs("NVDA")
+            except Exception:
+                pass
         candles = self.market_data.get_candles(limit=limit, ticker="NVDA")
         return {
             "candles": [
@@ -139,8 +140,9 @@ class RecommendationService:
             "usefulness": usefulness,
         }
 
-    def get_latest_signal(self, budget: float, risk: str) -> dict[str, object]:
-        self._refresh_live_inputs("NVDA")
+    def get_latest_signal(self, budget: float, risk: str, *, refresh: bool = True) -> dict[str, object]:
+        if refresh:
+            self._refresh_live_inputs("NVDA")
         return get_latest_recommendation(budget=budget, risk_profile=risk)  # type: ignore[arg-type]
 
     def validate_recommendation(
@@ -220,8 +222,11 @@ class RecommendationService:
         budget: float,
         risk: str,
         entry_price: float | None = None,
+        *,
+        refresh: bool = True,
     ) -> dict[str, object]:
-        self._refresh_live_inputs("NVDA")
+        if refresh:
+            self._refresh_live_inputs("NVDA")
         return get_agentic_recommendation(
             budget=budget,
             risk_profile=risk,  # type: ignore[arg-type]

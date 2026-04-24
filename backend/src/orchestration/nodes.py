@@ -4,7 +4,7 @@ from src.orchestration.state import AnalysisState
 
 
 def load_candles(state: AnalysisState, service: object) -> AnalysisState:
-    candles = service.get_candles(limit=state.get("limit", 120))["candles"]
+    candles = service.get_candles(limit=state.get("limit", 120), refresh=False)["candles"]
     return {"candles": candles}
 
 
@@ -12,6 +12,7 @@ def load_latest_signal(state: AnalysisState, service: object) -> AnalysisState:
     latest_signal = service.get_latest_signal(
         budget=state["budget"],
         risk=state["risk_profile"],
+        refresh=False,
     )
     return {"latest_signal": latest_signal}
 
@@ -21,6 +22,7 @@ def load_agentic_signal(state: AnalysisState, service: object) -> AnalysisState:
         budget=state["budget"],
         risk=state["risk_profile"],
         entry_price=state.get("entry_price"),
+        refresh=False,
     )
     return {"agentic_signal": agentic_signal}
 
@@ -40,4 +42,3 @@ def finalize_decision(state: AnalysisState, service: object) -> AnalysisState:
     }
     explanation = str(agentic_signal.get("explanation") or latest_signal.get("explanation") or "")
     return {"decision": decision, "explanation": explanation}
-
