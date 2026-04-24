@@ -979,7 +979,7 @@ function App() {
             <div className="card-subsection combined-reco-panel">
               <div className="signal-label">Current NVDA Recommendation</div>
               {loading && !signal && <p className="muted">Loading signal...</p>}
-              {refreshing && signal && <p className="muted">Analysing the market...</p>}
+              {refreshing && signal && <p className="muted">Working on the decision...</p>}
               {error && !loading && !isConnecting && <p className="error">{error}</p>}
 
               {signal && !error && (
