@@ -260,23 +260,27 @@ class RecommendationService:
             model_confidence=float((result.get("agentic_signal") or {}).get("confidence") or (result.get("latest_signal") or {}).get("confidence") or 0.0),
             entry_price=entry_price,
         )
+        persistence_payload = {
+            "forecast_run_id": None,
+            "recommendation_id": None,
+        }
         if persist:
-            persisted = self.analysis_results.persist_analysis(
-                symbol=symbol,
-                budget=budget,
-                risk_profile=risk,
-                latest_signal=result.get("latest_signal", {}),
-                agentic_signal=result.get("agentic_signal", {}),
-                decision=result.get("decision", {}),
-                explanation=str(result.get("explanation", "")),
-            )
-            result["persistence"] = {
-                "forecast_run_id": persisted.forecast_run_id,
-                "recommendation_id": persisted.recommendation_id,
-            }
-        else:
-            result["persistence"] = {
-                "forecast_run_id": None,
-                "recommendation_id": None,
-            }
+            try:
+                persisted = self.analysis_results.persist_analysis(
+                    symbol=symbol,
+                    budget=budget,
+                    risk_profile=risk,
+                    latest_signal=result.get("latest_signal", {}),
+                    agentic_signal=result.get("agentic_signal", {}),
+                    decision=result.get("decision", {}),
+                    explanation=str(result.get("explanation", "")),
+                )
+                persistence_payload = {
+                    "forecast_run_id": persisted.forecast_run_id,
+                    "recommendation_id": persisted.recommendation_id,
+                }
+            except Exception as exc:
+                result["persistence_warning"] = f"persist_analysis_failed: {exc}"
+
+        result["persistence"] = persistence_payload
         return result
