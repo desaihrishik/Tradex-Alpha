@@ -164,11 +164,10 @@ class RecommendationService:
 
         date_gap_days = None
         if model_date and market_date:
-            date_gap_days = int(
-                abs(
-                    (pd.to_datetime(market_date) - pd.to_datetime(model_date)).days
-                )
-            )
+            model_dt = pd.to_datetime(model_date, utc=True, errors="coerce")
+            market_dt = pd.to_datetime(market_date, utc=True, errors="coerce")
+            if pd.notna(model_dt) and pd.notna(market_dt):
+                date_gap_days = int(abs((market_dt.normalize() - model_dt.normalize()).days))
 
         price_diff = market_price - model_price
         price_diff_pct = (price_diff / model_price) if model_price else 0.0
