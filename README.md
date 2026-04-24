@@ -2,7 +2,7 @@
 
 AI-powered swing trading dashboard for **NVDA** with technical signals, sentiment, probabilistic forecasting, quant risk metrics, and an LLM copilot (**Alpha**).
 
-**Live Demo:** https://tradexalpha.vercel.app/
+**Live Demo:** https://tradexalpha.vercel.app/  
 _Note: Initial loading may take some time due to heavy backend processing and cold starts._
 
 ## Overview
