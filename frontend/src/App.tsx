@@ -688,7 +688,7 @@ function App() {
   }, [showMarketLoader]);
 
   const loaderSubtitle = loading
-    ? "Booting models, pricing feed, and sentiment intelligence."
+    ? "Booting models, pricing feed, and Alpha intelligence."
     : "Pulling latest candles, recommendation engine output, and quant factors.";
   const loaderTapeItems = useMemo(() => {
     const liveValues = [
