@@ -9,7 +9,13 @@ from src.core.config import get_settings
 OPENAI_RESPONSES_URL = "https://api.openai.com/v1/responses"
 
 
-def ask_llm(prompt: str, *, system: str | None = None) -> str:
+def ask_llm(
+    prompt: str,
+    *,
+    system: str | None = None,
+    max_output_tokens: int = 220,
+    timeout_seconds: int = 20,
+) -> str:
     settings = get_settings()
     if not settings.openai_api_key:
         return "Error communicating with LLM: OPENAI_API_KEY is not configured."
@@ -39,8 +45,9 @@ def ask_llm(prompt: str, *, system: str | None = None) -> str:
             json={
                 "model": settings.openai_model,
                 "input": input_items,
+                "max_output_tokens": max_output_tokens,
             },
-            timeout=60,
+            timeout=timeout_seconds,
         )
         response.raise_for_status()
         data = response.json()
@@ -59,18 +66,34 @@ def ask_llm(prompt: str, *, system: str | None = None) -> str:
         return f"Error communicating with LLM: {exc}"
 
 
-def ask_trade_question(*, question: str, context: dict) -> str:
+def ask_trade_question(*, question: str, context: dict, mode: str = "fast") -> str:
+    is_deep = mode.strip().lower() == "deep"
     system = (
         "You are a careful trade-analysis assistant. "
         "Answer only from the provided market and recommendation context. "
         "Do not invent prices, patterns, dates, probabilities, or sentiment values. "
         "If the signal is mixed or weak, say that clearly. "
-        "Keep the answer practical and directly focused on the user's trading question."
+        "Use a user-friendly, coaching tone with clear teaching-style explanations. "
     )
+    if is_deep:
+        system += (
+            "DEEP EXPLAIN mode: provide a structured explanation with reasoning, risks, and clear invalidation cues. "
+            "Keep it concise but more detailed than fast mode."
+        )
+    else:
+        system += (
+            "FAST mode: keep the answer practical and directly focused on the user's question. "
+            "Respond in under 90 words, with concise bullets."
+        )
     prompt = (
         f"Question: {question}\n\n"
         "Trading context JSON:\n"
         f"{json.dumps(context, indent=2, default=str)}\n\n"
         "Answer the question using only this context."
     )
-    return ask_llm(prompt, system=system)
+    return ask_llm(
+        prompt,
+        system=system,
+        max_output_tokens=520 if is_deep else 220,
+        timeout_seconds=35 if is_deep else 20,
+    )

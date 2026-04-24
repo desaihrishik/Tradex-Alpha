@@ -358,7 +358,8 @@ export async function llmEvaluate(
   question: string,
   budget: number,
   risk: RiskProfile,
-  entryPrice?: number
+  entryPrice?: number,
+  mode: "fast" | "deep" = "fast",
 ): Promise<{ answer: string }> {
   const res = await axios.post(`${BASE_URL}/api/llm/trade_question`, {
     question,
@@ -366,6 +367,7 @@ export async function llmEvaluate(
     budget,
     risk,
     entry_price: entryPrice ?? null,
+    mode,
   });
   return res.data;
 }

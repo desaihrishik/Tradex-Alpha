@@ -25,6 +25,56 @@ class TradeQuestionRequest(BaseModel):
     budget: float = 1000.0
     risk: str = "medium"
     entry_price: float | None = None
+    mode: str = "fast"
+
+
+def _compact_trade_context(analysis: dict, current_trend: dict, sentiment: dict) -> dict:
+    latest_signal = analysis.get("latest_signal") or {}
+    agentic_signal = analysis.get("agentic_signal") or {}
+    quant_insights = analysis.get("quant_insights") or {}
+
+    return {
+        "current_trend": {
+            "as_of": current_trend.get("as_of"),
+            "latest_close": current_trend.get("latest_close"),
+            "change": current_trend.get("change"),
+            "change_pct": current_trend.get("change_pct"),
+            "trend_label": current_trend.get("trend_label"),
+            "patterns": current_trend.get("patterns"),
+            "volume": current_trend.get("volume"),
+        },
+        "latest_signal": {
+            "date": latest_signal.get("date"),
+            "action": latest_signal.get("action"),
+            "confidence": latest_signal.get("confidence"),
+            "patterns": latest_signal.get("patterns"),
+            "explanation": latest_signal.get("explanation"),
+        },
+        "agentic_signal": {
+            "action": agentic_signal.get("action"),
+            "confidence": agentic_signal.get("confidence"),
+            "horizon_days": agentic_signal.get("horizon_days"),
+            "forecast": agentic_signal.get("forecast"),
+            "sentiment_label": agentic_signal.get("sentiment_label"),
+            "sentiment_score": agentic_signal.get("sentiment_score"),
+            "explanation": agentic_signal.get("explanation"),
+        },
+        "decision": analysis.get("decision"),
+        "validation": analysis.get("validation"),
+        "quant_summary": {
+            "as_of": quant_insights.get("as_of"),
+            "market_regime": quant_insights.get("market_regime"),
+            "momentum": (quant_insights.get("momentum") or {}).get("score"),
+            "risk_state": (quant_insights.get("summary") or {}).get("risk_state"),
+            "momentum_state": (quant_insights.get("summary") or {}).get("momentum_state"),
+        },
+        "sentiment": {
+            "as_of": sentiment.get("as_of"),
+            "label": sentiment.get("label"),
+            "score": sentiment.get("score"),
+            "interpretation": sentiment.get("interpretation"),
+        },
+    }
 
 
 @router.post("/trade_question")
@@ -40,21 +90,28 @@ def trade_question(data: TradeQuestionRequest):
     current_trend = recommendation_service.get_current_trend(symbol=data.symbol, refresh=False)
     sentiment = recommendation_service.get_sentiment_details(symbol=data.symbol, refresh=False)
 
+    compact_context = _compact_trade_context(analysis, current_trend, sentiment)
+    full_context = {
+        "symbol": data.symbol,
+        "budget": data.budget,
+        "risk": data.risk,
+        "entry_price": data.entry_price,
+        "analyze_response": analysis,
+        "current_trend": current_trend,
+        "sentiment": sentiment,
+    }
+    mode = (data.mode or "fast").strip().lower()
+    context_payload = full_context if mode == "deep" else {
+        "symbol": data.symbol,
+        "budget": data.budget,
+        "risk": data.risk,
+        "entry_price": data.entry_price,
+        **compact_context,
+    }
     answer = ask_trade_question(
         question=data.question,
-        context={
-            "symbol": data.symbol,
-            "budget": data.budget,
-            "risk": data.risk,
-            "entry_price": data.entry_price,
-            "current_trend": current_trend,
-            "latest_signal": analysis.get("latest_signal"),
-            "agentic_signal": analysis.get("agentic_signal"),
-            "decision": analysis.get("decision"),
-            "validation": analysis.get("validation"),
-            "quant_insights": analysis.get("quant_insights"),
-            "sentiment": sentiment,
-        },
+        context=context_payload,
+        mode=mode,
     )
 
     return {

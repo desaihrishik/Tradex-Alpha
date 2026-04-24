@@ -27,6 +27,17 @@ Tradex Alpha combines:
 
 ![Decision Engine](docs/images/decision-engine.png)
 
+## Alpha - AI Copilot
+Alpha is the built-in conversational trading copilot designed to explain the platform's signals in clear, user-friendly language.
+
+### What Alpha does
+- Answers context-aware questions using live dashboard context (trend, signal, sentiment, quant metrics)
+- Uses a teaching-style tone to explain trade logic, risks, and invalidation conditions
+- Supports a two-step response flow:
+  - **Fast mode** for quick, concise guidance
+  - **Explain in detail** follow-up for deeper reasoning on the same question
+- Reuses the same user query when **Explain in detail** is clicked, and runs a richer deep-analysis response
+
 ## Tech Stack
 ### Frontend
 - React 19 + TypeScript
@@ -183,6 +194,7 @@ Base: `http://localhost:8000`
 ### LLM
 - `POST /api/llm/observe`
 - `POST /api/llm/trade_question`
+  - Supports `mode: "fast" | "deep"` for concise vs detailed Alpha responses
 
 ### Admin
 - `POST /api/admin/login`

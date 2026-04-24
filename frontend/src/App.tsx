@@ -231,6 +231,7 @@ function App() {
   const [llmError, setLlmError] = useState<string | null>(null);
   const [llmOutput, setLlmOutput] = useState<string | null>(null);
   const [llmQuestion, setLlmQuestion] = useState("");
+  const [lastAskedQuestion, setLastAskedQuestion] = useState("");
   const [showEdgeOracle, setShowEdgeOracle] = useState(false);
   const [showAdminPanel, setShowAdminPanel] = useState(false);
   const [showAdminLogin, setShowAdminLogin] = useState(false);
@@ -614,8 +615,12 @@ function App() {
   // ---------------------------------------------------------
   // LLM Evaluate
   // ---------------------------------------------------------
-  const handleEvaluateClick = async () => {
-    if (!latestCandle || !signal || !llmQuestion.trim()) return;
+  const handleEvaluateClick = async (
+    mode: "fast" | "deep" = "fast",
+    questionOverride?: string,
+  ) => {
+    const questionToAsk = (questionOverride ?? llmQuestion).trim();
+    if (!latestCandle || !signal || !questionToAsk) return;
 
     try {
       setLlmLoading(true);
@@ -623,12 +628,14 @@ function App() {
       setLlmOutput(null);
 
       const res = await llmEvaluate(
-        llmQuestion.trim(),
+        questionToAsk,
         debouncedBudget,
         risk,
         debouncedEntryPrice,
+        mode,
       );
       setLlmOutput(res.answer);
+      setLastAskedQuestion(questionToAsk);
     } catch (err) {
       console.error(err);
       setLlmError("Failed to contact LLM.");
@@ -1426,10 +1433,19 @@ function App() {
 
             {llmOutput && (
               <>
-                <div className="chat-bubble chat-bubble-user">{llmQuestion}</div>
+                <div className="chat-bubble chat-bubble-user">{lastAskedQuestion || llmQuestion}</div>
                 <div className="chat-bubble chat-bubble-assistant" style={{ whiteSpace: "pre-line" }}>
                   {llmOutput}
                 </div>
+                {!llmLoading && Boolean(lastAskedQuestion) && (
+                  <button
+                    type="button"
+                    className="edge-oracle-prompt-chip"
+                    onClick={() => void handleEvaluateClick("deep", lastAskedQuestion)}
+                  >
+                    Explain in detail
+                  </button>
+                )}
               </>
             )}
           </div>
@@ -1463,7 +1479,7 @@ function App() {
             />
             <button
               className="evaluate-btn edge-oracle-send"
-              onClick={handleEvaluateClick}
+              onClick={() => void handleEvaluateClick()}
               disabled={!latestCandle || !signal || llmLoading || !llmQuestion.trim()}
             >
               {llmLoading ? "Thinking..." : "Ask Alpha"}
