@@ -52,15 +52,11 @@ function formatSignedPct(value: number) {
   return `${sign}${(value * 100).toFixed(2)}%`;
 }
 
-function formatDateTime(value?: string | null) {
-  if (!value) return "n/a";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "n/a";
-  return date.toLocaleString();
-}
-
 function formatDateTimeWithZone(value?: string | null) {
   if (!value) return "n/a";
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return `${value} 00:00:00`;
+  }
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "n/a";
   return date.toLocaleString(undefined, {
@@ -425,7 +421,6 @@ function App() {
     patternPage * PATTERN_PAGE_SIZE,
     (patternPage + 1) * PATTERN_PAGE_SIZE,
   );
-  const patternSlots = Array.from({ length: PATTERN_PAGE_SIZE }, (_, index) => visiblePatternCandles[index] ?? null);
 
   useEffect(() => {
     setPatternPage(0);
@@ -853,7 +848,7 @@ function App() {
                   <div>
                     <div className="signal-label">Trend</div>
                     <div className={`signal-action trend-${currentTrend.trend_label}`}>{currentTrend.trend_label}</div>
-                    <div className="muted-small">As of: {formatDateTime(currentTrend.as_of)}</div>
+                    <div className="muted-small">As of: {formatDateTimeWithZone(currentTrend.as_of)}</div>
                   </div>
                   <div>
                     <div className="signal-label">Last Close</div>
@@ -902,7 +897,7 @@ function App() {
                 <div>
                   <div className="signal-label">Score</div>
                   <div className="signal-value">{formatPercent(sentimentDetails.score)}</div>
-                  <div className="muted-small">As of: {formatDateTime(sentimentDetails.as_of)}</div>
+                  <div className="muted-small">As of: {formatDateTimeWithZone(sentimentDetails.as_of)}</div>
                 </div>
               </div>
 
@@ -1331,39 +1326,35 @@ function App() {
 
           {recentPatternCandles.length > 0 ? (
             <div className="pattern-summary-list">
-              {patternSlots.map((c, index) => (
+              {visiblePatternCandles.map((c, index) => (
                 <div
-                  key={c ? c.date : `pattern-slot-${patternPage}-${index}`}
-                  className={`pattern-summary-item ${c ? "" : "pattern-summary-item-empty"}`.trim()}
+                  key={`${c.date}-${index}`}
+                  className="pattern-summary-item"
                 >
-                  {c && (
-                    <>
-                      {(() => {
-                        const { change, changePct } = getDailyMoveForCandle(c);
-                        return (
-                          <>
-                            <div className="pattern-summary-meta">
-                              <span className="pattern-date">{c.date}</span>
-                              <span className="pattern-price">${c.close.toFixed(2)}</span>
-                            </div>
-                            <div className="pattern-summary-change">
-                              <span className="pattern-change-value">
-                                {formatSignedCurrency(change)} ({formatSignedPercent(changePct)})
-                              </span>
-                            </div>
-                            <div className="pattern-tags">
-                              {c.patterns.slice(0, 1).map((p) => (
-                                <span key={p} className="pattern-tag">{p}</span>
-                              ))}
-                              {c.patterns.length > 1 && (
-                                <span className="pattern-tag pattern-tag-muted">+{c.patterns.length - 1}</span>
-                              )}
-                            </div>
-                          </>
-                        );
-                      })()}
-                    </>
-                  )}
+                  {(() => {
+                    const { change, changePct } = getDailyMoveForCandle(c);
+                    return (
+                      <>
+                        <div className="pattern-summary-meta">
+                          <span className="pattern-date">{c.date}</span>
+                          <span className="pattern-price">${c.close.toFixed(2)}</span>
+                        </div>
+                        <div className="pattern-summary-change">
+                          <span className="pattern-change-value">
+                            {formatSignedCurrency(change)} ({formatSignedPercent(changePct)})
+                          </span>
+                        </div>
+                        <div className="pattern-tags">
+                          {c.patterns.slice(0, 1).map((p) => (
+                            <span key={p} className="pattern-tag">{p}</span>
+                          ))}
+                          {c.patterns.length > 1 && (
+                            <span className="pattern-tag pattern-tag-muted">+{c.patterns.length - 1}</span>
+                          )}
+                        </div>
+                      </>
+                    );
+                  })()}
                 </div>
               ))}
             </div>

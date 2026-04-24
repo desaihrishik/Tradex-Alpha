@@ -149,7 +149,7 @@ class LocalMarketDataRepository:
 
         records = []
         for _, row in history.iterrows():
-            ts = pd.to_datetime(row["Date"]).normalize()
+            ts = pd.to_datetime(row["Date"])
             records.append(
                 {
                     "symbol_id": symbol_id,
@@ -567,7 +567,7 @@ class LocalMarketDataRepository:
 
                             return {
                                 "symbol": ticker,
-                                "as_of": pd.to_datetime(latest["ts"]).strftime("%Y-%m-%d"),
+                                "as_of": pd.to_datetime(latest["ts"], utc=True).isoformat(),
                                 "latest_close": latest_close,
                                 "previous_close": previous_close,
                                 "change": change,
@@ -600,7 +600,7 @@ class LocalMarketDataRepository:
                 inferred_trend = "bearish"
             return {
                 "symbol": ticker,
-                "as_of": pd.to_datetime(latest["Date"]).strftime("%Y-%m-%d"),
+                "as_of": pd.to_datetime(latest["Date"], utc=True).isoformat(),
                 "latest_close": latest_close,
                 "previous_close": previous_close,
                 "change": change,
