@@ -1440,7 +1440,7 @@ function App() {
                 {!llmLoading && Boolean(lastAskedQuestion) && (
                   <button
                     type="button"
-                    className="edge-oracle-prompt-chip"
+                    className="edge-oracle-prompt-chip edge-oracle-deep-dive"
                     onClick={() => void handleEvaluateClick("deep", lastAskedQuestion)}
                   >
                     Explain in detail
