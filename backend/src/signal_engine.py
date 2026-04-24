@@ -30,7 +30,8 @@ MODEL_DIR = ROOT_DIR / "models"
 
 DATASET_CSV = DATA_DIR / "nvda_daily_dataset.csv"
 MODEL_PATH = MODEL_DIR / "nvda_rf_signal.pkl"
-META_PATH = MODEL_DIR / "nvda_rf_metadata.json"
+PRIMARY_META_PATH = MODEL_DIR / "nvda_rf_signal_metadata.json"
+LEGACY_META_PATH = MODEL_DIR / "nvda_rf_metadata.json"
 
 RiskProfile = Literal["low", "medium", "high"]
 
@@ -65,12 +66,14 @@ BEARISH_PATTERNS = {
 
 
 def load_model_and_data():
-    if not MODEL_PATH.exists() or not META_PATH.exists():
+    metadata_path = PRIMARY_META_PATH if PRIMARY_META_PATH.exists() else LEGACY_META_PATH
+
+    if not MODEL_PATH.exists() or not metadata_path.exists():
         raise FileNotFoundError(
             f"Model or metadata not found. Run train_model.py first."
         )
 
-    with open(META_PATH, "r", encoding="utf-8") as f:
+    with open(metadata_path, "r", encoding="utf-8") as f:
         meta = json.load(f)
 
     feature_cols = meta["feature_cols"]
