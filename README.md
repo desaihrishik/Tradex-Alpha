@@ -2,6 +2,9 @@
 
 AI-powered swing trading dashboard for **NVDA** with technical signals, sentiment, probabilistic forecasting, quant risk metrics, and an LLM copilot (**Alpha**).
 
+**Live Demo:** https://tradexalpha.vercel.app/
+_Note: Initial loading may take some time due to heavy backend processing and cold starts._
+
 ## Overview
 Tradex Alpha combines:
 - ML classification (`BUY` / `HOLD` / `SELL`)
@@ -10,6 +13,8 @@ Tradex Alpha combines:
 - Quant insight modules (momentum, volatility, risk, levels, relative strength)
 - LLM-assisted explanation and Q&A
 
+![Main Dashboard](docs/images/main-dashboard.png)
+
 ## Core Features
 - **Trendline Projection chart** with candles, trendline, and short-horizon forecast overlay
 - **Market Pulse** panel (trend/sentiment toggle)
@@ -17,7 +22,10 @@ Tradex Alpha combines:
 - **Alpha Quant Lens** (single-card switched metrics)
 - **Alpha chat assistant** for contextual trade Q&A
 - **Admin & System Status** modal (scheduler, refresh timestamps, model version, heartbeat)
-- **Animated full-screen market loader** for sync/refresh UX
+- **Animated full-screen market loader** for startup/hard refresh, with inline background refresh states
+- **Vercel Web Analytics** integration for traffic/page insights
+
+![Decision Engine](docs/images/decision-engine.png)
 
 ## Tech Stack
 ### Frontend
@@ -25,6 +33,7 @@ Tradex Alpha combines:
 - Vite
 - ApexCharts (`react-apexcharts`)
 - Axios
+- Vercel Analytics (`@vercel/analytics`)
 
 ### Backend
 - FastAPI + Uvicorn
