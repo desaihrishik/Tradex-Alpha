@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import time
+from zoneinfo import ZoneInfo
 
 import pandas as pd
 
@@ -525,7 +526,7 @@ class LocalMarketDataRepository:
                             .eq("symbol_id", symbol_id)
                             .eq("timeframe", "1d")
                             .order("ts", desc=True)
-                            .limit(2)
+                            .limit(12)
                             .execute()
                         )
                         technical_result = (
@@ -567,7 +568,7 @@ class LocalMarketDataRepository:
 
                             return {
                                 "symbol": ticker,
-                                "as_of": pd.to_datetime(latest["ts"], utc=True).isoformat(),
+                                "as_of": self._as_market_close_iso(latest["ts"]),
                                 "latest_close": latest_close,
                                 "previous_close": previous_close,
                                 "change": change,
@@ -600,7 +601,7 @@ class LocalMarketDataRepository:
                 inferred_trend = "bearish"
             return {
                 "symbol": ticker,
-                "as_of": pd.to_datetime(latest["Date"], utc=True).isoformat(),
+                "as_of": self._as_market_close_iso(latest["Date"]),
                 "latest_close": latest_close,
                 "previous_close": previous_close,
                 "change": change,
@@ -677,3 +678,19 @@ class LocalMarketDataRepository:
         if ema_5_dist < -0.01 and ema_12_dist < -0.02 and rsi_14 <= 45:
             return "bearish"
         return "sideways"
+    @staticmethod
+    def _as_market_close_iso(value: object) -> str:
+        ts_utc = pd.to_datetime(value, utc=True, errors="coerce")
+        if pd.isna(ts_utc):
+            return pd.to_datetime(value, errors="coerce").isoformat()
+        ts_ny = ts_utc.tz_convert(ZoneInfo("America/New_York"))
+        close_ny = pd.Timestamp(
+            year=ts_ny.year,
+            month=ts_ny.month,
+            day=ts_ny.day,
+            hour=16,
+            minute=0,
+            second=0,
+            tz=ZoneInfo("America/New_York"),
+        )
+        return close_ny.tz_convert("UTC").isoformat()

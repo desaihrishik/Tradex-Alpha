@@ -409,9 +409,7 @@ function App() {
   }, [debouncedBudget, risk, debouncedEntryPrice]);
 
   const latestCandle = candles[candles.length - 1];
-  const recentPatternCandles = candles
-    .filter((c) => c.patterns?.length > 0)
-    .reverse();
+  const recentPatternCandles = [...candles].reverse();
   const PATTERN_PAGE_SIZE = 4;
   const maxPatternPage = Math.max(
     0,
@@ -1350,6 +1348,9 @@ function App() {
                           ))}
                           {c.patterns.length > 1 && (
                             <span className="pattern-tag pattern-tag-muted">+{c.patterns.length - 1}</span>
+                          )}
+                          {c.patterns.length === 0 && (
+                            <span className="pattern-tag pattern-tag-muted">no_pattern</span>
                           )}
                         </div>
                       </>
